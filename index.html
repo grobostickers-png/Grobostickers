@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grobostickers</title>
+    
+    <!-- 1. Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Supabase Library (MUST be exactly this link) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    
+   <style>
+    /* Importing a soft, friendly, rounded font */
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
+    body {
+        font-family: 'Quicksand', sans-serif;
+        background-color: #fffbfb; /* Very soft cream/blush */
+        color: #5c4b51; /* Soft warm dark brown instead of harsh black */
+        background-image: radial-gradient(#ffebf0 2px, transparent 2px);
+        background-size: 30px 30px; /* Cute polka dot background pattern */
+    }
+
+    /* Soft floating animation for elements */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .floating {
+        animation: float 4s ease-in-out infinite;
+    }
+
+    /* Pillowy Soft Cards */
+    .product-card {
+        background: #ffffff;
+        border-radius: 40px; /* Extra round! */
+        border: 2px solid #fff0f3;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 10px 30px rgba(255, 175, 204, 0.08); /* Soft pink shadow */
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        border-color: #ffafcc; /* Cute pink border on hover */
+        box-shadow: 0 15px 40px rgba(255, 175, 204, 0.2);
+    }
+
+    /* Gentle sticker image behavior */
+    .sticker-img {
+        filter: drop-shadow(0 8px 15px rgba(0,0,0,0.06));
+        transition: transform 0.4s ease;
+    }
+
+    .product-card:hover .sticker-img {
+        transform: scale(1.08) rotate(3deg);
+    }
+
+    /* Aesthetic Button */
+    .btn-primary {
+        background: #ffafcc; /* Pastel pink */
+        color: #ffffff;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 100px; /* Pill shape */
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(255, 175, 204, 0.4);
+    }
+
+    .btn-primary:hover {
+        background: #ff9ebb;
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 175, 204, 0.6);
+    }
+</style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+
+    <!-- ================= HEADER ================= -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
+            <!-- Logo / Shop Name -->
+            <a href="index.html" class="text-2xl font-black text-blue-600 tracking-tight">
+                GROBOSTICKERS<span class="text-yellow-400">.</span>
+            </a>
+
+            <!-- Cart Button -->
+            <a href="checkout.html" class="relative bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-full transition flex items-center gap-2">
+                <span>🛒 Cart</span>
+                <!-- The JS targets this specific ID to update the number -->
+                <span id="cart-count" class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">0</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="container mx-auto px-4 py-12 max-w-6xl flex-grow">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Level up your Creativity.</h1>
+            <p class="text-gray-500 text-lg">High-quality, waterproof stickers for stcker lovers and creators.</p>
+        </div>
+
+        <!-- 
+            Product Grid 
+            The JS targets "product-grid" to inject all your database items here 
+        -->
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- If JS hasn't loaded yet, show a loading message -->
+            <p class="col-span-full text-center text-gray-400 font-medium py-10 animate-pulse">
+                Loading stickers from database...
+            </p>
+        </div>
+
+    </main>
+
+    
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-white border-t border-gray-200 py-8 mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2026 My Sticker Shop. All rights reserved.
+        </div>
+    </footer>
+
+
+    <script src="assets/js/supabase-config.js"></script>
+
+     <script src="assets/js/app.js"></script>
+
+    <script src="assets/js/cart-logic.js"></script>
+
+    
+
+</div>
+</body>
+</html>

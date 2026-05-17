@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Sticker Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script src="assets/js/app.js" defer></script>
+
+    
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-white shadow-sm p-4 mb-8">
+        <div class="container mx-auto max-w-2xl flex justify-between items-center">
+            <a href="index.html" class="text-blue-600 font-bold hover:underline">← Back to Shop</a>
+            <div class="font-bold bg-gray-100 px-4 py-2 rounded-lg">Cart Items: <span id="cart-count" class="text-blue-600">0</span></div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-2xl px-4 pb-12">
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+<h1 class="text-3xl font-black mb-6 text-gray-900">Secure Checkout</h1>
+            
+            <div class="mb-8 p-5 bg-gray-50 rounded-2xl border border-gray-200">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Review Your Items</h2>
+                <div id="checkout-items-container" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <p class="text-gray-400 text-sm">Loading items...</p>
+                </div>
+            </div>
+            <form id="checkout-form" class="space-y-5">
+            
+            <form id="checkout-form" class="space-y-5">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="customer-name" required 
+                               class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="customer-email" required 
+                               class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="john@example.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Shipping Address</label>
+                    <textarea id="customer-address" required rows="3"
+                           class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
+                           placeholder="123 Sticker St, Suite 100, City, State, Zip"></textarea>
+                </div>
+
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Payment Method</label>
+                        <select id="payment-method" required onchange="toggleGiftCardField()"
+                                class="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="COD">Cash on Delivery (COD)</option>
+                            <option value="Amazon Gift Card">Amazon Pay Gift Card</option>
+                            <option value="Google Play Gift Card">Google Play Gift Card</option>
+                        </select>
+                    </div>
+
+                    <div id="gift-card-section" class="hidden animate-pulse">
+                        <label id="gift-card-label" class="block text-sm font-bold text-orange-600 mb-1">Enter Gift Card Code</label>
+                        <input type="text" id="gift-card-code" 
+                               class="w-full p-3 border-2 border-orange-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-orange-50" 
+                               placeholder="E.g. XXXX-XXXX-XXXX">
+                        <p class="text-[10px] text-orange-500 mt-1 font-medium">*We will verify this code before shipping your stickers.</p>
+                    </div>
+                </div>
+                <hr class="my-6 border-gray-200">
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Have a Promo Code?</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="coupon-input" class="flex-1 p-3 border border-gray-300 rounded-xl uppercase outline-none focus:ring-2 focus:ring-gray-800" placeholder="e.g. SAVE10">
+                        <button type="button" onclick="applyCoupon()" class="bg-gray-800 text-white px-6 rounded-xl font-bold hover:bg-black transition">Apply</button>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                    <div class="flex justify-between text-gray-600 mb-2 font-medium">
+                        <span>Subtotal:</span>
+                        <span id="display-subtotal">₹0.00</span>
+                    </div>
+                    <div id="discount-row" class="flex justify-between text-green-600 mb-2 font-bold hidden">
+                        <span>Discount applied:</span>
+                        <span id="display-discount">-₹0.00</span>
+                    </div>
+                    <div class="flex justify-between text-2xl font-black text-gray-900 mt-4 pt-4 border-t border-blue-200">
+                        <span>Total:</span>
+                        <span id="display-total">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="submit-order-btn"
+                            class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg shadow-blue-600/30">
+                        Complete Purchase
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // State variables to keep track of money
+        let subtotal = 0;
+        let discount = 0;
+        let currentDiscountPercent = 0; // Remembers the % off
+        let activeCouponCode = null;    // Remembers the coupon name
+
+        // 1. Function to calculate and display the cart data instantly
+       // 1. Function to calculate and display the cart data instantly
+        // 1. Function to calculate and display the cart data instantly
+        function loadCartData() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const itemsContainer = document.getElementById('checkout-items-container');
+            
+            // Clear the container before drawing
+            if (itemsContainer) itemsContainer.innerHTML = '';
+            
+            // Calculate Subtotal AND Total Quantity
+            subtotal = 0;
+            let totalQuantity = 0; 
+
+            if (cart.length === 0 && itemsContainer) {
+                itemsContainer.innerHTML = '<p class="text-gray-500 italic text-sm">Your bag is empty.</p>';
+            }
+            
+            cart.forEach(item => {
+                const itemQty = item.quantity || 1;
+                const itemPrice = parseFloat(item.price) || 0;
+                const itemTotal = itemPrice * itemQty;
+                
+                totalQuantity += itemQty; 
+                subtotal += itemTotal; 
+
+                // Draw the item in the Order Summary box
+                if (itemsContainer) {
+                    itemsContainer.innerHTML += `
+                        <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-900">${item.name}</span>
+                                <span class="text-xs text-gray-500 font-medium">Qty: ${itemQty}</span>
+                            </div>
+                            <div class="font-black text-blue-600">₹${itemTotal}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Update item count in header using the true quantity
+            const cartBadge = document.getElementById('cart-count');
+            if (cartBadge) cartBadge.innerText = totalQuantity;
+
+            updateTotalsUI();
+        }
+
+        // 2. Function to update the math on the screen
+        function updateTotalsUI() {
+            const total = subtotal - discount;
+            
+            // Format numbers to 2 decimal places
+            document.getElementById('display-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('display-total').innerText = `₹${total.toFixed(2)}`;
+        }
+
+        // 3. Function to handle the Gift Card dropdown
+        // 3. Function to handle the Gift Card dropdown
+        function toggleGiftCardField() {
+            const paymentMethod = document.getElementById('payment-method').value;
+            const giftCardSection = document.getElementById('gift-card-section');
+            const giftCardInput = document.getElementById('gift-card-code');
+            const giftCardLabel = document.getElementById('gift-card-label');
+
+            // Check if they selected EITHER gift card
+            if (paymentMethod === 'Amazon Gift Card' || paymentMethod === 'Google Play Gift Card') {
+                giftCardSection.classList.remove('hidden'); 
+                giftCardInput.required = true; 
+                
+                // Dynamically change the text to match their choice!
+                if (paymentMethod === 'Amazon Gift Card') {
+                    giftCardLabel.innerText = 'Enter Amazon Gift Card Code';
+                    giftCardInput.placeholder = 'E.g. AS25-XXXX-XXXX';
+                } else {
+                    giftCardLabel.innerText = 'Enter Google Play Gift Card Code';
+                    giftCardInput.placeholder = 'E.g. GPXX-XXXX-XXXX';
+                }
+            } else {
+                giftCardSection.classList.add('hidden'); 
+                giftCardInput.required = false; 
+                giftCardInput.value = ''; 
+            }
+        }
+
+        // 4. Function to apply a coupon code
+        // 4. Function to apply a coupon code securely from Supabase
+        async function applyCoupon() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) {
+                alert("Add items to your cart first!");
+                return;
+            }
+
+            const couponInput = document.getElementById('coupon-input').value.trim().toUpperCase();
+            const discountRow = document.getElementById('discount-row');
+
+            if (!couponInput) {
+                alert("Please enter a promo code.");
+                return;
+            }
+
+            try {
+                // Ask Supabase if this code exists and is active
+                const { data, error } = await supa
+                    .from('coupons')
+                    .select('*')
+                    .eq('code', couponInput)
+                    .eq('active', true)
+                    .single();
+
+                if (error || !data) {
+                    // Invalid or inactive code
+                    discount = 0;
+                    currentDiscountPercent = 0;
+                    activeCouponCode = null;
+                    discountRow.classList.add('hidden');
+                    alert('Invalid or expired promo code.');
+                } else {
+                    // Valid code! Apply the correct math from the database
+                    currentDiscountPercent = data.discount_percent;
+                    activeCouponCode = data.code;
+                    discount = subtotal * (currentDiscountPercent / 100);
+                    
+                    discountRow.classList.remove('hidden');
+                    document.getElementById('display-discount').innerText = `-₹${discount.toFixed(2)}`;
+                    alert(`Success! ${currentDiscountPercent}% discount applied.`);
+                }
+            } catch (err) {
+                console.error("Coupon error:", err);
+            }
+            
+            updateTotalsUI(); // Recalculate final price
+        }
+
+        // 5. Intercept the form submission
+        // 5. Intercept the form submission and show a Success Screen!
+        // 5. Intercept form, send to Supabase, and show Success Screen!
+        document.getElementById('checkout-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Stop page refresh
+            
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) {
+                alert("Your bag is empty! Please add some stickers before checking out.");
+                return;
+            }
+
+            // Change button text so user knows it's working
+            const submitBtn = document.getElementById('submit-order-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Processing Order...";
+
+            try {
+                // 1. Gather Customer Details from the form
+                const customerName = document.getElementById('customer-name').value;
+                const customerEmail = document.getElementById('customer-email').value;
+                const address = document.getElementById('customer-address').value;
+                const method = document.getElementById('payment-method').value;
+                const giftCode = document.getElementById('gift-card-code').value.trim();
+
+                // Combine method and code if it's a gift card
+                // Combine method and code if it's EITHER gift card
+                const finalPaymentDetails = (method === "Amazon Gift Card" || method === "Google Play Gift Card") 
+                    ? `${method} (${giftCode})` 
+                    : method;
+
+                // 2. Format the data EXACTLY how your Supabase database expects it
+
+                // Format the data for Supabase using the REAL coupon data
+                const ordersToInsert = cart.map(item => {
+                    const itemPrice = parseFloat(item.price) || 0;
+                    const itemQty = item.quantity || 1;
+                    const itemTotal = itemPrice * itemQty;
+                    
+                    // Use the dynamic percentage from the database
+                    const itemDiscount = itemTotal * (currentDiscountPercent / 100);
+                    const itemFinalPrice = Math.round(itemTotal - itemDiscount);
+
+                    return {
+                        product_id: item.id,
+                        customer_name: customerName,
+                        customer_email: customerEmail,
+                        address: address,
+                        payment_method: finalPaymentDetails,
+                        total_price: itemFinalPrice, 
+                        status: 'pending',
+                        applied_coupon: activeCouponCode // Uses the real code name!
+                    };
+                });
+
+                // 3. SEND TO SUPABASE!
+                // (Assumes 'supa' is your database variable from supabase-config.js)
+                const { error } = await supa.from('orders').insert(ordersToInsert);
+                if (error) throw error;
+
+                // 4. If successful, completely wipe the cart
+                localStorage.removeItem('cart');
+                localStorage.setItem('cart', JSON.stringify([])); 
+                subtotal = 0;
+                discount = 0;
+                
+                const cartCountBadge = document.getElementById('cart-count');
+                if (cartCountBadge) cartCountBadge.innerText = '0';
+
+                // 5. Replace the form with the Success Screen
+                // 4. Redirect to the dedicated success page!
+            window.location.href = 'success.html';
+
+            } catch (err) {
+                // If Supabase throws an error, tell the user!
+                console.error("Order Error:", err.message);
+                alert("There was an issue connecting to the database: " + err.message);
+            } finally {
+                // Re-enable the button just in case there was an error
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Complete Purchase";
+            }
+        });
+
+        // --- RUN IMMEDIATELY ON PAGE LOAD ---
+        document.addEventListener('DOMContentLoaded', loadCartData);
+        window.addEventListener('pageshow', loadCartData);
+    </script>
+</body>
+</html>

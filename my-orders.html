@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track My Orders | Sticker Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-black text-gray-900 mb-2">Order Tracking</h1>
+            <p class="text-gray-500">Enter your email to see your order history and status.</p>
+        </header>
+
+        <!-- Search Box -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="email" id="lookup-email" placeholder="your@email.com" 
+                       class="flex-1 p-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                <button onclick="lookupOrders()" 
+                        class="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-600/20">
+                    Find My Orders
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-container" class="space-y-4">
+            <!-- Orders will be injected here -->
+            <div class="text-center py-12 text-gray-400">
+                Enter your email above to get started.
+            </div>
+        </div>
+
+        <div class="text-center mt-12">
+            <a href="index.html" class="text-blue-600 font-bold hover:underline">← Back to Shop</a>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR ACTUAL KEYS
+       const SUPABASE_URL = "https://yaplodlzpirqkyslxlek.supabase.co"; // ✅ Your Real URL
+const SUPABASE_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhcGxvZGx6cGlycWt5c2x4bGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NjI5ODEsImV4cCI6MjA5NDIzODk4MX0.JVCRMruCiilw7ddIAWeqhJra0B__YbSbM6-E4P04a1s";
+        const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function lookupOrders() {
+            const email = document.getElementById('lookup-email').value.trim();
+            const container = document.getElementById('results-container');
+
+            if (!email) return alert("Please enter your email.");
+
+            container.innerHTML = `<div class="text-center py-12">Searching...</div>`;
+
+            const { data, error } = await supa
+                .from('orders')
+                .select('*')
+                .eq('customer_email', email)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<div class="text-red-500 text-center py-12">Error: ${error.message}</div>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-2xl text-center">
+                        <p class="font-bold text-yellow-700">No orders found for this email.</p>
+                        <p class="text-yellow-600 text-sm mt-1">Make sure you used the same email as your checkout.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(order => `
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <span class="font-black text-gray-900 text-lg">Order #${order.id}</span>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider 
+                    ${order.status === 'shipped' ? 'bg-green-100 text-green-700' : 
+                      order.status === 'cancelled' ? 'bg-red-100 text-red-700' : 
+                      'bg-yellow-100 text-yellow-700'}">
+                    ${order.status}
+                </span>
+            </div>
+            <!-- FIXED DATE LINE -->
+            <p class="text-sm text-gray-400 font-medium">Placed on ${new Date(order.created_at).toLocaleDateString()}</p>
+        </div>
+        
+        <div class="text-right">
+            <!-- FIXED PRICE LINE -->
+            <div class="text-2xl font-black text-gray-900">₹${Math.round(order.total_price)}</div>
+            <!-- FIXED PAYMENT METHOD LINE -->
+            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${order.payment_method}</p>
+        </div>
+    </div>
+`).join('');
+        }
+    </script>
+</body>
+</html>

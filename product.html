@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grobostickers | Product Details</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background-color: #fffbfb; 
+            color: #5c4b51; 
+            background-image: radial-gradient(#ffebf0 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        .btn-primary { 
+            background: #ffafcc; 
+            color: white; 
+            padding: 16px; 
+            border-radius: 100px; 
+            font-weight: 700; 
+            transition: 0.3s; 
+            box-shadow: 0 4px 15px rgba(255, 175, 204, 0.4); 
+        }
+        .btn-primary:hover { transform: scale(1.02); background: #ff9ebb; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-[#fff0f3]">
+        <div class="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-black text-[#ffafcc] tracking-tight">
+                GROBOSTICKERS<span class="text-[#bde0fe]">.</span>
+            </a>
+
+            <a href="checkout.html" class="relative bg-[#fff0f3] hover:bg-[#ffe5ec] text-[#5c4b51] font-bold py-2 px-6 rounded-full transition flex items-center gap-2">
+                <span>🛒 Bag</span>
+                <span id="cart-count" class="bg-[#ffafcc] text-white text-xs px-2 py-1 rounded-full">0</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 max-w-6xl flex-grow">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
+            
+            <div class="bg-white p-8 md:p-12 rounded-[50px] border-2 border-[#fff0f3] shadow-sm">
+                <img id="p-img" src="" class="w-full h-auto object-contain drop-shadow-2xl">
+            </div>
+
+            <div>
+                <nav class="text-xs font-bold text-[#ffafcc] mb-4 uppercase tracking-widest">Shop / Stickers</nav>
+                <h1 id="p-name" class="text-5xl font-bold mb-4 text-[#5c4b51]">Loading...</h1>
+                
+                <div class="flex items-center gap-4 mb-6">
+                    <span id="p-price" class="text-3xl font-bold text-[#ffafcc]"></span>
+                    <span id="p-size" class="bg-[#bde0fe] text-[#5c4b51] text-[10px] font-black px-3 py-1 rounded-full uppercase"></span>
+                </div>
+
+                <p id="p-desc" class="text-[#8e7f84] leading-relaxed text-lg mb-8"></p>
+
+                <button id="add-btn" class="btn-primary w-full md:w-auto px-12 mb-12">
+                    Add To Bag 🛍️
+                </button>
+
+                <div class="border-t border-[#fff0f3] pt-10">
+                    <h3 class="text-2xl font-bold mb-6 text-[#5c4b51]">Reviews From Lovers 📸</h3>
+                    
+                    <div id="reviews-list" class="space-y-6 mb-10">
+                        </div>
+
+                    <div class="bg-white p-8 rounded-[30px] border border-[#fff0f3] shadow-sm">
+                        <h4 class="font-bold mb-4 text-[#5c4b51]">Got this sticker? Leave a review!</h4>
+                        
+                        <input type="text" id="rev-name" placeholder="Your Name" 
+                               class="w-full p-3 mb-3 rounded-xl border border-[#fff0f3] outline-none focus:ring-2 focus:ring-[#ffafcc]">
+                        
+                        <textarea id="rev-comment" placeholder="What do you think of it?" 
+                                  class="w-full p-3 mb-3 rounded-xl border border-[#fff0f3] h-24 outline-none focus:ring-2 focus:ring-[#ffafcc]"></textarea>
+                        
+                        <div class="p-4 rounded-xl border border-[#fff0f3] bg-[#fffbfb] mb-4">
+                            <label class="block text-[10px] font-bold text-[#8e7f84] mb-2 uppercase tracking-widest">Upload a photo!</label>
+                            <input type="file" id="rev-image" accept="image/*" 
+                                   class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#fff0f3] file:text-[#5c4b51] cursor-pointer">
+                        </div>
+
+                        <button id="rev-submit" class="w-full bg-[#5c4b51] text-white px-6 py-4 rounded-full font-bold hover:opacity-90 transition">
+                            Post Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-[#fff0f3] py-8 text-center text-[#8e7f84] text-sm">
+        &copy; 2026 Grobostickers. All rights reserved.
+    </footer>
+
+    <script src="assets/js/supabase-config.js"></script> 
+    
+    <script src="assets/js/cart-logic.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function loadProductDetails() {
+            if (!productId) return window.location.href = 'index.html';
+
+            // 1. Fetch Product Data
+            const { data: p, error } = await supa.from('products').select('*').eq('id', productId).single();
+            if (error) return window.location.href = 'index.html';
+
+            // Update UI
+            document.getElementById('p-img').src = p.image_url;
+            document.getElementById('p-name').innerText = p.name;
+            document.getElementById('p-price').innerText = `₹${Math.round(p.price)}`;
+            document.getElementById('p-desc').innerText = p.description || "A lovely addition to your collection.";
+            document.getElementById('p-size').innerText = `Size: ${p.size || '3x3"'}`;
+            
+            // Add to Bag Button Logic
+            const addBtn = document.getElementById('add-btn');
+            if (p.is_out_of_stock) {
+                addBtn.innerText = "Sold Out 🌸";
+                addBtn.disabled = true;
+                addBtn.style.opacity = "0.5";
+            } else {
+                addBtn.onclick = function() {
+                    if (typeof window.addToCart === "function") {
+                        window.addToCart(p.id, p.name, p.price);
+                    } else {
+                        console.error("Cart logic file missing!");
+                    }
+                };
+            }
+
+            // 2. Fetch Reviews
+            const { data: reviews } = await supa
+                .from('reviews')
+                .select('*')
+                .eq('product_id', Number(productId))
+                .eq('is_approved', true);
+
+            const rList = document.getElementById('reviews-list');
+            if (reviews && reviews.length > 0) {
+                rList.innerHTML = reviews.map(r => `
+                    <div class="bg-white p-6 rounded-3xl border border-[#fff0f3] shadow-sm">
+                        <p class="font-bold text-sm text-[#5c4b51] mb-1">${r.customer_name}</p>
+                        <p class="text-sm text-[#8e7f84] italic mb-4">"${r.comment}"</p>
+                        ${r.image_url ? `
+                            <div class="rounded-2xl overflow-hidden border border-[#fff0f3]">
+                                <img src="${r.image_url}" class="w-full h-48 object-cover">
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } else {
+                rList.innerHTML = `<p class="text-[#8e7f84] text-sm italic">No reviews yet. Be the first to show some love! 🌷</p>`;
+            }
+        }
+
+        // Review Submission Logic
+        document.getElementById('rev-submit').onclick = async () => {
+            const name = document.getElementById('rev-name').value;
+            const comment = document.getElementById('rev-comment').value;
+            const imageFile = document.getElementById('rev-image').files[0];
+            const submitBtn = document.getElementById('rev-submit');
+            let uploadedImageUrl = null;
+
+            if(!name || !comment) return alert("Please fill in your name and comment! 🌸");
+
+            submitBtn.innerText = "Uploading... ✨";
+            submitBtn.disabled = true;
+
+            try {
+                // 1. Upload to Storage if image exists
+                if (imageFile) {
+                    const fileName = `${Date.now()}-${imageFile.name}`;
+                    const filePath = `${productId}/${fileName}`;
+
+                    const { data: uploadData, error: uploadError } = await supa.storage
+                        .from('review-images')
+                        .upload(filePath, imageFile, { contentType: imageFile.type });
+
+                    if (uploadError) throw uploadError;
+
+                    const { data } = supa.storage.from('review-images').getPublicUrl(filePath);
+                    uploadedImageUrl = data.publicUrl;
+                }
+
+                // 2. Insert into Table
+                const { error: insertError } = await supa.from('reviews').insert([{
+                    customer_name: name,
+                    comment: comment,
+                    product_id: productId,
+                    image_url: uploadedImageUrl,
+                    is_approved: false
+                }]);
+
+                if (insertError) throw insertError;
+
+                alert("Review submitted for approval! 🌷");
+                location.reload();
+
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+            } finally {
+                submitBtn.innerText = "Post Review";
+                submitBtn.disabled = false;
+            }
+        };
+
+        // Initialize Page
+       // Change from window.onload to pageshow
+window.addEventListener('pageshow', () => {
+    loadProductDetails();
+    if (window.updateCartCount) window.updateCartCount();
+});
+    </script>
+</body>
+</html>
